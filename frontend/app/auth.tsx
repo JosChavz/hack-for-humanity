@@ -23,9 +23,7 @@ export default function Auth() {
     if (response?.type === 'success') {
       try {
         const { authentication } = response;
-        const host = Constants.expoConfig?.hostUri?.split(':')[0];
-        
-        const backendResponse = await fetch(`http://${host}:9874/auth/google`, {
+        const backendResponse = await fetch(`http://localhost:9874/auth/google`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
