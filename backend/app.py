@@ -8,7 +8,7 @@ import google.generativeai as genai
 import io
 from PIL import Image
 import traceback
-from backend.models.user import User
+from models.user import User
 from mongoengine import connect
 from google.oauth2 import id_token
 from google.auth.transport import requests
@@ -58,7 +58,6 @@ def upload_image():
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=9874, debug=True)
 
-
 @app.route('/auth/google', methods=['POST'])
 def google_auth():
     token = request.json.get('token')
@@ -99,3 +98,4 @@ def google_auth():
 
     except ValueError as e:
         return jsonify({'error': 'Invalid token'}), 401
+    
