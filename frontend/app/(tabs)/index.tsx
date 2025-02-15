@@ -1,11 +1,32 @@
 import { Image, StyleSheet, Platform } from 'react-native';
+import * as Network from 'expo-network';
 
 import { HelloWave } from '@/components/HelloWave';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
+import { useEffect } from 'react';
+import Constants from 'expo-constants';
 
 export default function HomeScreen() {
+
+  useEffect(() => {
+    // Fetch the test route from Flask
+    const fetchTestRoute = async () => {
+      try {
+        // const ip = await Network.getIpAddressAsync();
+        const host = Constants.expoConfig?.hostUri?.split(':')[0];
+        const response = await fetch(`http://${host}:9874/test-route`);
+        const data = await response.json();
+        console.log('API Response:', data);
+      } catch (error) {
+        console.error('Error calling Flask API:', error);
+      }
+    };
+
+    fetchTestRoute();
+  }, []);
+
   return (
     <ParallaxScrollView
       headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
