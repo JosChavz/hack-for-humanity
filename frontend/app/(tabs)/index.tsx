@@ -31,11 +31,11 @@ export default function App() {
   }
 
   const takePicture = async () => {
-    const photo = await ref.current?.takePictureAsync();
-    if (photo?.uri) {
-      uploadImage(photo.uri)
+    const photo = await ref.current?.takePictureAsync({ base64: true });
+    if (photo?.base64) {
+      setUri(`data:image/jpeg;base64,${photo.base64}`);
+      uploadImage(photo.base64)
     }
-    setUri(photo?.uri ? photo.uri : null);
   };
 
   const uploadImage = async (base64Image: string) => {
