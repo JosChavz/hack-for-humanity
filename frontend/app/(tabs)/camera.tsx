@@ -54,21 +54,6 @@ export default function CameraScreen() {
     }
   };
 
-  const recordVideo = async () => {
-    if (recording) {
-      setRecording(false);
-      ref.current?.stopRecording();
-      return;
-    }
-    setRecording(true);
-    const video = await ref.current?.recordAsync();
-    console.log({ video });
-  };
-
-  const toggleMode = () => {
-    setMode((prev) => (prev === "picture" ? "video" : "picture"));
-  };
-
   const toggleFacing = () => {
     setFacing((prev) => (prev === "back" ? "front" : "back"));
   };
