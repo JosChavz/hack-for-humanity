@@ -47,6 +47,10 @@
     "react-native-screens": "~4.4.0",
     "react-native-web": "~0.19.13",
     "react-native-webview": "13.12.5",
+    "expo-network": "~7.0.5",
+    "expo-camera": "~16.0.16",
+    "expo-image-manipulator": "~13.0.6",
+    "expo-image": "~2.0.5"
     "tailwind-merge": "^3.0.1",
     "tailwindcss-animate": "^1.0.7"
   },
