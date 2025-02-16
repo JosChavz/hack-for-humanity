@@ -38,6 +38,12 @@
     },
     "plugins": [
       [
+        "expo-image-picker",
+        {
+          "photosPermission": "The app needs access to your photos to upload wildlife images."
+        }
+      ],
+      [
         "expo-secure-store",
         {
           "configureAndroidBackup": true,

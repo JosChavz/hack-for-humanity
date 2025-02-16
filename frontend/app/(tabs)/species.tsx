@@ -26,10 +26,19 @@ export default function SpeciesScreen() {
     try {
       const host = Constants.expoConfig?.hostUri?.split(':')[0];
       const response = await fetch(`http://${host}:9874/get-sightings`);
+      
+      // Check if response is ok
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      // Try to parse JSON
       const data = await response.json();
       setSightings(data.sightings);
     } catch (error) {
       console.error('Error fetching sightings:', error);
+      // Set empty array as fallback
+      setSightings([]);
     }
   };
 

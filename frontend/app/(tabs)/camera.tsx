@@ -1,59 +1,42 @@
-import { CameraType, CameraView, useCameraPermissions } from "expo-camera";
-import { useEffect, useRef, useState } from "react";
-import { Alert, Button, Pressable, StyleSheet, Text, View } from "react-native";
+import { useState } from "react";
+import { Alert, StyleSheet, Text, View } from "react-native";
 import { Image } from "expo-image";
-import { FontAwesome6 } from "@expo/vector-icons";
 import Constants from "expo-constants";
-import { getCurrentPositionAsync, LocationObject, requestForegroundPermissionsAsync } from "expo-location";
+import * as ImagePicker from 'expo-image-picker';
 import * as SecureStore from 'expo-secure-store';
+import { Button } from "~/components/ui/button";
+import { getCurrentPositionAsync, LocationObject, requestForegroundPermissionsAsync } from "expo-location";
 
 export default function CameraScreen() {
-  const ref = useRef<CameraView>(null);
-  const [permission, requestPermission] = useCameraPermissions();
   const [uri, setUri] = useState<string | null>(null);
-  const [facing, setFacing] = useState<CameraType>("back");
   const [location, setLocation] = useState<LocationObject | null>(null);
 
-   async function requestLocationPermission() { 
-      const {granted} = await requestForegroundPermissionsAsync();
-  
-      if(granted) {
-          const currentPosition = await getCurrentPositionAsync();
-          setLocation(currentPosition);
-  
-        }
-   }
-   useEffect(()=> {
-    requestLocationPermission();
-  }, []);
-
-
-  if (!permission) {
-    return null;
+  async function requestLocationPermission() {
+    const { granted } = await requestForegroundPermissionsAsync();
+    if (granted) {
+      const currentPosition = await getCurrentPositionAsync();
+      setLocation(currentPosition);
+    }
   }
 
-  if (!permission.granted) {
-    return (
-      <View style={styles.container}>
-        <Text style={{ textAlign: "center" }}>
-          We need your permission to use the camera
-        </Text>
-        <Button onPress={requestPermission} title="Grant permission" />
-      </View>
-    );
-  }
+  const pickImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+      base64: true,
+    });
 
-  const takePicture = async () => {
-    const photo = await ref.current?.takePictureAsync({ base64: true });
-    if (photo?.base64) {
-      setUri(`data:image/jpeg;base64,${photo.base64}`);
+    if (!result.canceled && result.assets[0].base64) {
+      setUri(`data:image/jpeg;base64,${result.assets[0].base64}`);
       const userInfo = await SecureStore.getItemAsync('userInfo');
       if (!userInfo) {
         Alert.alert('Error', 'User not logged in');
         return;
       }
-      const { email } = JSON.parse(userInfo);
-      uploadImage(photo.base64);
+      await requestLocationPermission();
+      uploadImage(result.assets[0].base64);
     }
   };
 
@@ -79,11 +62,7 @@ export default function CameraScreen() {
     }
   };
 
-  const toggleFacing = () => {
-    setFacing((prev) => (prev === "back" ? "front" : "back"));
-  };
-
-  const renderPicture = () => {
+  const renderImage = () => {
     return (
       <View>
         <Image
@@ -91,96 +70,48 @@ export default function CameraScreen() {
           contentFit="contain"
           style={{ width: 300, aspectRatio: 1 }}
         />
-        <Button onPress={() => setUri(null)} title="Take another picture" />
+        <Button onPress={() => setUri(null)} className="mt-4">
+          <Text className="text-white">Upload another image</Text>
+        </Button>
       </View>
     );
   };
 
-  const renderCamera = () => {
+  const renderUploadButton = () => {
     return (
-      <CameraView
-        style={styles.camera}
-        ref={ref}
-        mode={'picture'}
-        facing={facing}
-        mute={false}
-        responsiveOrientationWhenOrientationLocked
-      >
-        <View style={styles.shutterContainer}>
-          <View style={{ width: 50 }}>
-          <Text style={{ color: "white", fontSize: 14, textAlign: "center" }}>Please center object</Text>
-          </View>
-          <Pressable onPress={takePicture}>
-            {({ pressed }) => (
-              <View
-                style={[
-                  styles.shutterBtn,
-                  {
-                    opacity: pressed ? 0.5 : 1,
-                  },
-                ]}
-              >
-                <View
-                  style={[
-                    styles.shutterBtnInner,
-                    {
-                      backgroundColor: "white"
-                    },
-                  ]}
-                />
-              </View>
-            )}
-          </Pressable>
-          <Pressable onPress={toggleFacing}>
-            <FontAwesome6 name="rotate-left" size={32} color="white" />
-          </Pressable>
-        </View>
-      </CameraView>
+      <View style={styles.uploadContainer}>
+        <Text style={styles.instructions}>
+          Upload an image of wildlife to identify the species
+        </Text>
+        <Button onPress={pickImage} className="mt-4">
+          <Text className="text-white">Select Image</Text>
+        </Button>
+      </View>
     );
   };
 
   return (
     <View style={styles.container}>
-      {uri ? renderPicture() : renderCamera()}
+      {uri ? renderImage() : renderUploadButton()}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 60,
     flex: 1,
     backgroundColor: "#fff",
     alignItems: "center",
     justifyContent: "center",
+    padding: 20,
   },
-  camera: {
-    flex: 1,
-    width: "100%",
-  },
-  shutterContainer: {
-    position: "absolute",
-    bottom: 44,
-    left: 0,
-    width: "100%",
-    alignItems: "center",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingHorizontal: 30,
-  },
-  shutterBtn: {
-    backgroundColor: "transparent",
-    borderWidth: 5,
-    borderColor: "white",
-    width: 85,
-    height: 85,
-    borderRadius: 45,
+  uploadContainer: {
     alignItems: "center",
     justifyContent: "center",
   },
-  shutterBtnInner: {
-    width: 70,
-    height: 70,
-    borderRadius: 50,
+  instructions: {
+    textAlign: "center",
+    marginBottom: 20,
+    color: "#666",
   },
 }); 

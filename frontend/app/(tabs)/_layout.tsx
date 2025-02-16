@@ -49,7 +49,6 @@ export default function TabLayout() {
         options={{
           title: 'Species',
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="leaf.fill" color={color} />,
-          headerLeft: ({ tintColor }) => <CloseButton color={tintColor ?? ''} />,
         }}
       />
       <Tabs.Screen
@@ -57,7 +56,6 @@ export default function TabLayout() {
         options={{
           title: 'Camera',
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="camera.fill" color={color} />,
-          headerLeft: ({ tintColor }) => <CloseButton color={tintColor ?? ''} />,
         }}
       />
       <Tabs.Screen
@@ -65,7 +63,6 @@ export default function TabLayout() {
         options={{
           title: 'Profile',
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="person.fill" color={color} />,
-          headerRight: ({ tintColor }) => <CloseButton color={tintColor ?? ''} />,
         }}
       />
     </Tabs>
