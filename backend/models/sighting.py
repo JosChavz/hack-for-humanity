@@ -10,4 +10,5 @@ class Sighting(Document):
     description = StringField(required=True)
     email = EmailField(required=True)
     created_at = DateTimeField(default=datetime.datetime.utcnow)
+    location_name = StringField(default="Unknown Location")
     meta = {'collection': 'sightings'}
