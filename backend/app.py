@@ -1,6 +1,6 @@
 import base64
 import certifi
-from flask import Flask, jsonify, request
+from flask import Flask, json, jsonify, request
 from flask_cors import CORS
 import os
 from dotenv import load_dotenv
@@ -16,6 +16,7 @@ from models.user import User
 from google.oauth2 import id_token
 import requests  # Use the requests library for HTTP requests
 import datetime
+from models.sighting import Sighting
 
 load_dotenv()
 app = Flask(__name__)
@@ -98,6 +99,9 @@ def upload_image():
     try:
         data = request.get_json()
         base64_image = data.get("image")
+        latitude = data.get("latitude")
+        longitude = data.get("longitude")
+        email = data.get("email")
 
         if not base64_image:
             return jsonify({"error": "No image received"}), 400
@@ -106,15 +110,42 @@ def upload_image():
         image_data = base64.b64decode(base64_image)
         image = Image.open(io.BytesIO(image_data))
 
-        # Prepare Gemini API request (using correct function)
-        prompt = "Analyze this image and check if there are any animals. If so, identify the species."
-        response = model.generate_content(
-            [prompt, image]
+        # Updated prompt for structured response
+        prompt = (
+            "Analyze this image and determine if it contains an animal, bird, or plant. "
+            "Respond with a valid JSON object containing two fields: "
+            "'type' (must be one of 'animal', 'bird', or 'plant') and 'species' (the species name). "
+            "If no recognizable species is found, return 'Unknown' for both fields. "
+            "Example response: {\"type\": \"bird\", \"species\": \"Bald Eagle\"}."
         )
 
-        print(response.text)
+        response = model.generate_content([prompt, image])
+        
+        # Extract structured data from the response
+        try:
+            response_data = json.loads(response.text)
+            sighting_type = response_data.get("type", "Unknown")
+            species = response_data.get("species", "Unknown")
+        except Exception:
+            return jsonify({"error": "Failed to parse AI response"}), 500
 
-        return jsonify({"message": "Image processed successfully", "analysis": response.text})
+        # Create a new Sighting document
+        if species != 'Unknown' and type != 'Unknown':
+            new_sighting = Sighting(
+                latitude=str(latitude),
+                longitude=str(longitude),
+                image=base64_image,  # Storing the image as base64
+                type=sighting_type,
+                species=species,
+                email=email
+            )
+
+            new_sighting.save()
+
+        return jsonify({
+            "species": species,
+            "analysis": response_data,
+        })
 
     except Exception as e:
         traceback.print_exc()  # Print the full traceback for debugging

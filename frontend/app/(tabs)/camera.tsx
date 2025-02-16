@@ -1,19 +1,31 @@
-import { CameraMode, CameraType, CameraView, useCameraPermissions } from "expo-camera";
-import { useRef, useState } from "react";
+import { CameraType, CameraView, useCameraPermissions } from "expo-camera";
+import { useEffect, useRef, useState } from "react";
 import { Alert, Button, Pressable, StyleSheet, Text, View } from "react-native";
 import { Image } from "expo-image";
-import { AntDesign } from "@expo/vector-icons";
-import { Feather } from "@expo/vector-icons";
 import { FontAwesome6 } from "@expo/vector-icons";
 import Constants from "expo-constants";
+import { getCurrentPositionAsync, LocationObject, requestForegroundPermissionsAsync } from "expo-location";
 
 export default function CameraScreen() {
   const ref = useRef<CameraView>(null);
   const [permission, requestPermission] = useCameraPermissions();
   const [uri, setUri] = useState<string | null>(null);
-  const [mode, setMode] = useState<CameraMode>("picture");
   const [facing, setFacing] = useState<CameraType>("back");
-  const [recording, setRecording] = useState(false);
+  const [location, setLocation] = useState<LocationObject | null>(null);
+
+   async function requestLocationPermission() { 
+      const {granted} = await requestForegroundPermissionsAsync();
+  
+      if(granted) {
+          const currentPosition = await getCurrentPositionAsync();
+          setLocation(currentPosition);
+  
+        }
+   }
+   useEffect(()=> {
+    requestLocationPermission();
+  }, []);
+
 
   if (!permission) {
     return null;
@@ -44,11 +56,11 @@ export default function CameraScreen() {
       const response = await fetch(`http://${host}:9874/upload-image`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image: base64Image }),
+        body: JSON.stringify({ image: base64Image, latitude: location?.coords.latitude, longitude: location?.coords.latitude, email: "aostrom@ucsc.edu" }),
       });
 
       const data = await response.json();
-      Alert.alert('Response from Flask:', data.message);
+      Alert.alert('Sighting uploaded!', `It looks like you saw a ${data.species}`);
     } catch (error) {
       console.error('Error uploading image:', error);
     }
@@ -76,15 +88,15 @@ export default function CameraScreen() {
       <CameraView
         style={styles.camera}
         ref={ref}
-        mode={mode}
+        mode={'picture'}
         facing={facing}
         mute={false}
         responsiveOrientationWhenOrientationLocked
       >
         <View style={styles.shutterContainer}>
-          <Pressable onPress={() => console.log('fix')}>
-            <AntDesign name="picture" size={32} color="white" />
-          </Pressable>
+          <View style={{ width: 50 }}>
+          <Text style={{ color: "white", fontSize: 14, textAlign: "center" }}>Please center object</Text>
+          </View>
           <Pressable onPress={takePicture}>
             {({ pressed }) => (
               <View
@@ -99,7 +111,7 @@ export default function CameraScreen() {
                   style={[
                     styles.shutterBtnInner,
                     {
-                      backgroundColor: mode === "picture" ? "white" : "red",
+                      backgroundColor: "white"
                     },
                   ]}
                 />
@@ -123,6 +135,7 @@ export default function CameraScreen() {
 
 const styles = StyleSheet.create({
   container: {
+    marginBottom: 60,
     flex: 1,
     backgroundColor: "#fff",
     alignItems: "center",

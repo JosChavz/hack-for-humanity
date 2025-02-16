@@ -6,6 +6,6 @@ class Sighting(Document):
    image = StringField(required=True)
    type = StringField(required=True)
    species = StringField(required=True)
-   email = EmailField(required=True, unique=True)
+   email = EmailField(required=True)
    
    meta = {'collection': 'sightings'}

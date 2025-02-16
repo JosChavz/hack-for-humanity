@@ -16,9 +16,9 @@ export default function TabLayout() {
   const CloseButton = ({ color }: { color: string }) => (
     <TouchableOpacity 
       onPress={() => router.replace('/')} 
-      style={{ padding: 8 }}
+      style={{ padding: 8, marginLeft: 8 }}
     >
-      <IconSymbol size={20} name="xmark" color={color} />
+      <IconSymbol size={24} name="xmark" color={color} />
     </TouchableOpacity>
   );
 
@@ -49,7 +49,7 @@ export default function TabLayout() {
         options={{
           title: 'Species',
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="leaf.fill" color={color} />,
-          headerRight: ({ tintColor }) => <CloseButton color={tintColor ?? ''} />,
+          headerLeft: ({ tintColor }) => <CloseButton color={tintColor ?? ''} />,
         }}
       />
       <Tabs.Screen
@@ -57,7 +57,7 @@ export default function TabLayout() {
         options={{
           title: 'Camera',
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="camera.fill" color={color} />,
-          headerRight: ({ tintColor }) => <CloseButton color={tintColor ?? ''} />,
+          headerLeft: ({ tintColor }) => <CloseButton color={tintColor ?? ''} />,
         }}
       />
       <Tabs.Screen
