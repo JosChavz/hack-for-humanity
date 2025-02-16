@@ -308,7 +308,7 @@ def get_sightings():
                 "id": str(sighting.id),
                 "latitude": sighting.latitude,
                 "longitude": sighting.longitude,
-                "image": sighting.image,  # Optional: Omit if not needed
+                "image": sighting.image,
                 "type": sighting.type,
                 "species": sighting.species,
                 "description": sighting.description,
@@ -318,7 +318,7 @@ def get_sightings():
             for sighting in sightings
         ]
         print(sightings_list)
-        return jsonify({"sightings": sightings_list}), 200  # Wrapped inside "sightings" key
+        return jsonify({"sightings": sightings_list}), 200
     except Exception as e:
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
@@ -401,6 +401,26 @@ def submit_report():
 
     except Exception as e:
         traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+    
+@app.route('/get-reports', methods=['GET'])
+def get_reports():
+    try:
+
+        reports = Report.objects()
+        reports_list = [
+            {
+                "id": str(report.id),
+                "latitude": report.latitude,
+                "longitude": report.longitude,
+                "report_type": report.report_type,
+                "created_at": report.created_at
+            }
+            for report in reports
+        ]
+
+        return jsonify({"reports": reports_list}), 200
+    except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
