@@ -1,4 +1,4 @@
-import { StyleSheet, View, Image, Platform } from 'react-native';
+import { StyleSheet, View, Image, Platform, Pressable, Text } from 'react-native';
 import React, { useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import * as Google from 'expo-auth-session/providers/google';
@@ -8,6 +8,8 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import * as WebBrowser from 'expo-web-browser';       
 import { makeRedirectUri } from 'expo-auth-session';
+import { LinearGradient } from 'expo-linear-gradient';
+import { AntDesign } from '@expo/vector-icons';
 
 export default function Auth() {
   const router = useRouter();
@@ -31,8 +33,6 @@ export default function Auth() {
     if (response?.type === 'success') {
       try {
         const { authentication } = response;
-        console.log('Full response:', response);
-        console.log('Authentication object:', authentication);
         console.log('Access token:', authentication?.accessToken);
 
         const host = Platform.select({
@@ -40,21 +40,14 @@ export default function Auth() {
           default: Constants.expoConfig?.hostUri?.split(':')[0]
         });
         
-        console.log('Using host:', host);
         const url = `http://${host}:9874/auth/google`;
-        console.log('Calling backend URL:', url);
 
         const backendResponse = await fetch(url, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            token: authentication?.accessToken,
-          }),
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: authentication?.accessToken }),
         });
 
-        // Add error logging
         if (!backendResponse.ok) {
           const errorData = await backendResponse.json();
           console.error('Backend error:', errorData);
@@ -62,32 +55,28 @@ export default function Auth() {
         }
 
         const { sessionToken, user } = await backendResponse.json();
-
         await SecureStore.setItemAsync('sessionToken', sessionToken);
         await SecureStore.setItemAsync('userInfo', JSON.stringify(user));
 
-        console.log("User info:", user);
         router.replace('/home');
       } catch (error) {
-        console.log('Authentication error details:', error);
+        console.log('Authentication error:', error);
       }
     }
   };
 
   return (
-    <ThemedView style={styles.container}>
-      <Image 
-        style={styles.logo} 
-        source={require('@/assets/images/icon.png')} 
-      />
-      <ThemedText style={styles.title}>Welcome</ThemedText>
-      <ThemedText 
-        style={styles.button}
-        onPress={() => promptAsync()}
-      >
-        Sign in with Google
-      </ThemedText>
-    </ThemedView>
+    <View style={styles.container}>
+      <Text style={styles.header}>Climacs</Text>
+      <View style={styles.content}>
+        <Image style={styles.logo} source={require('@/assets/images/climacs.png')} />
+        <Text style={styles.title}>Sign in to continue</Text>
+        <Pressable style={styles.button} onPress={() => promptAsync()}>
+          <AntDesign name="google" size={20} color="#EA4335" style={styles.googleIcon} />
+          <Text style={styles.buttonText}>Sign in with Google</Text>
+        </Pressable>
+      </View>
+    </View>
   );
 }
 
@@ -96,22 +85,62 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: '#6DBD6D',
+    paddingHorizontal: 20,
+  },
+  header: {
+    fontSize: 64,
+    fontWeight: 'bold',
+    color: 'white',
+    marginBottom: 40,
+    textAlign: 'center',
+  },
+  content: {
+    alignItems: 'center',
+    padding: 40,
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    width: '100%',
+    maxWidth: 350,
   },
   logo: {
-    width: 100,
-    height: 100,
+    width: 120,
+    height: 120,
     marginBottom: 20,
+    tintColor: 'white'
   },
   title: {
-    fontSize: 24,
+    marginTop: 40,
+    fontSize: 22,
     fontWeight: 'bold',
-    marginBottom: 30,
+    color: 'white',
+    marginBottom: 40,
+    textAlign: 'center',
   },
   button: {
-    padding: 15,
-    backgroundColor: '#0a7ea4',
-    color: 'white',
-    borderRadius: 5,
-    overflow: 'hidden',
-  }
-}); 
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'white',
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 5,
+    width: '100%',
+    justifyContent: 'center',
+  },
+  googleIcon: {
+    marginRight: 12,
+  },
+  buttonText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+});

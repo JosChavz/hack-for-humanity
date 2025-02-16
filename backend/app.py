@@ -86,7 +86,8 @@ def google_auth():
                 'user': {
                     'id': str(user.id),
                     'email': user.email,
-                    'name': user.name
+                    'name': user.name,
+                    'contributionNumber': user.contributionNumber
                 }
             })
 
