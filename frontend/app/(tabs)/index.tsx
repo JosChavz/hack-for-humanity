@@ -1,4 +1,4 @@
-import { Image, StyleSheet, Platform } from 'react-native';
+import { Image, StyleSheet, Platform, View } from 'react-native';
 import * as Network from 'expo-network';
 import {LocationObject, requestForegroundPermissionsAsync, getCurrentPositionAsync, watchPositionAsync, LocationAccuracy } from 'expo-location';
 
@@ -14,52 +14,19 @@ export default function HomeScreen() {
   const [location, setLocation] = useState<LocationObject | null>(null);
   const mapRef = useRef<MapView>(null);
 
-  // useEffect(() => {
-  //   // Fetch the test route from Flask
-  //   const fetchTestRoute = async () => {
-  //     try {
-  //       // const ip = await Network.getIpAddressAsync();
-  //       const host = Constants.expoConfig?.hostUri?.split(':')[0];
-  //       const response = await fetch(`http://${host}:9874/test-route`);
-  //       const data = await response.json();
-  //       console.log('API Response:', data);
-  //     } catch (error) {
-  //       console.error('Error calling Flask API:', error);
-  //     }
-  //   };
-  //
-  //   fetchTestRoute();
-  // }, []);
-
   return (
-    <MapView
-        provider={PROVIDER_GOOGLE}
-        ref={mapRef}
-        initialRegion={{
-          latitude: location?.coords.latitude ?? 37.3489,
-          longitude: location?.coords.longitude ?? 121.9368,
-          latitudeDelta: 0.005,
-          longitudeDelta: 0.005
-        }}>
-    </MapView>
+    <View style={styles.container}>
+      <MapView style={styles.map} />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  container: {
+    flex: 1,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  map: {
+    width: '100%',
+    height: '100%',
   },
 });
