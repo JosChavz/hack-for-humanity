@@ -14,7 +14,6 @@ import { AntDesign } from '@expo/vector-icons';
 export default function Auth() {
   const router = useRouter();
 
-  // Create a redirectUri that points back to the app and stays in the same tab.
   WebBrowser.maybeCompleteAuthSession();
 
   const [request, response, promptAsync] = Google.useAuthRequest({

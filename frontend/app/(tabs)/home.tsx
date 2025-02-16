@@ -235,6 +235,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'blue',
     borderWidth: 2,
     borderColor: 'white',
-    position: 'absolute', // Ensures it's centered
+    position: 'absolute',
   },
 });
