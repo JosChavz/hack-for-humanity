@@ -282,5 +282,29 @@ def get_species_by_type():
         print(f"Error: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
+@app.route('/get-sightings', methods=['GET'])
+def get_sightings():
+    try:
+        sightings = Sighting.objects()
+        sightings_list = [
+            {
+                "id": str(sighting.id),
+                "latitude": sighting.latitude,
+                "longitude": sighting.longitude,
+                "image": sighting.image,  # Optional: Omit if not needed
+                "type": sighting.type,
+                "species": sighting.species,
+                "description": sighting.description,
+                "created_at": sighting.created_at,
+                "email": sighting.email
+            }
+            for sighting in sightings
+        ]
+        print(sightings_list)
+        return jsonify({"sightings": sightings_list}), 200  # Wrapped inside "sightings" key
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+    
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=9874, debug=True)
