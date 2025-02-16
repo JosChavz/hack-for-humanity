@@ -68,6 +68,7 @@ def google_auth():
                     email=userinfo['email'],
                     name=userinfo['name'],
                     google_id=userinfo['sub'],
+                    profilePicture=userinfo['picture'].encode('utf-8').decode('unicode_escape'),
                     contributionNumber=0  # Add default value
                 )
                 user.save()
@@ -87,6 +88,7 @@ def google_auth():
                     'id': str(user.id),
                     'email': user.email,
                     'name': user.name,
+                    'profilePicture': user.profilePicture,
                     'contributionNumber': user.contributionNumber
                 }
             })
