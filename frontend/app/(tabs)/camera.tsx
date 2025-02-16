@@ -142,6 +142,9 @@ export default function CameraScreen() {
       Alert.alert('Success', 'Sighting submitted successfully!');
       setCurrentSighting(null);
       setBase64Image(null);
+      setEditableSpecies('');
+      setEditableType('animal');
+      setEditableDescription('');
     } catch (error) {
       console.error('Error submitting sighting:', error);
       Alert.alert('Error', 'Failed to submit sighting');
