@@ -1,4 +1,4 @@
-from mongoengine import Document, StringField, EmailField, DateTimeField
+from mongoengine import Document, StringField, EmailField, DateTimeField, ListField, FloatField
 import datetime
 
 class Sighting(Document):
@@ -11,4 +11,13 @@ class Sighting(Document):
     email = EmailField(required=True)
     created_at = DateTimeField(default=datetime.datetime.utcnow)
     location_name = StringField(default="Unknown Location")
-    meta = {'collection': 'sightings'}
+    embedding = ListField(FloatField(), required=False)  # Store the 384-dimensional vector
+    meta = {
+        'collection': 'sightings',
+        'indexes': [
+            {
+                'fields': ['embedding'],
+                'cls': False,  # This ensures it's treated as a vector index
+            }
+        ]
+    }
