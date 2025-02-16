@@ -63,7 +63,8 @@ export default function RootLayout() {
           name="species/[id]" 
           options={{ 
             headerShown: true,
-            headerTitle: "Species Details"
+            headerTitle: "Species Details",
+            headerBackTitle: "Back",
           }} 
         />
       </Stack>

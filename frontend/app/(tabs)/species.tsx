@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, TextInput, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, TextInput, ActivityIndicator, Text } from 'react-native';
 import { Link } from 'expo-router';
 import { Card, CardHeader, CardTitle } from '~/components/ui/card';
 import { useState, useCallback } from 'react';
@@ -55,7 +55,9 @@ export default function SpeciesScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.searchContainer}>
+      <Text className={'text-4xl mt-4'}>Welcome to Climacs! 🌍</Text>
+      <Text className={'my-8'}>Scan your surroundings to identify plants and animals, learn about their climate impact, and contribute to conservation efforts.</Text>
+      <View className={'mb-8'} style={styles.searchContainer}>
         <TextInput
           style={styles.searchInput}
           placeholder="Search any wildlife..."
@@ -97,9 +99,9 @@ export default function SpeciesScreen() {
           ))}
         </View>
       ) : (
-        <>
+        <View className={'gap-4 mt-8'}>
           <Link href="/species/1">
-            <Card className="w-full mb-4">
+            <Card className="w-full">
               <CardHeader style={{ backgroundColor: '#2D3250', borderRadius: 12 }}>
                 <CardTitle className="text-white">Animals</CardTitle>
               </CardHeader>
@@ -107,7 +109,7 @@ export default function SpeciesScreen() {
           </Link>
 
           <Link href="/species/2">
-            <Card className="w-full mb-4">
+            <Card className="w-full">
               <CardHeader style={{ backgroundColor: '#424769', borderRadius: 12 }}>
                 <CardTitle className="text-white">Birds</CardTitle>
               </CardHeader>
@@ -115,7 +117,7 @@ export default function SpeciesScreen() {
           </Link>
 
           <Link href="/species/3" >
-            <Card className="w-full mb-4">
+            <Card className="w-full">
               <CardHeader style={{ backgroundColor: '#7077A1', borderRadius: 12 }}>
                 <CardTitle className="text-white">Plants</CardTitle>
               </CardHeader>
@@ -123,13 +125,13 @@ export default function SpeciesScreen() {
           </Link>
 
           <Link href="/species/4">
-            <Card className="w-full mb-4">
+            <Card className="w-full">
               <CardHeader style={{ backgroundColor: '#576CBC', borderRadius: 12 }}>
                 <CardTitle className="text-white">Insects</CardTitle>
               </CardHeader>
             </Card>
           </Link>
-        </>
+        </View>
       )}
     </View>
   );
