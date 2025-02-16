@@ -22,7 +22,8 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.humanity-hacks.humanity-hacks"
     },
     "web": {
       "bundler": "metro",
@@ -62,6 +63,9 @@
     "extra": {
       "router": {
         "origin": false
+      },
+      "eas": {
+        "projectId": "83febafb-6bb1-47c4-b92c-d10f82ed22f4"
       }
     }
   }

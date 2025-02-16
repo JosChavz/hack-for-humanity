@@ -20,6 +20,12 @@
       "ios": {
         "simulator": true
       }
+    },
+    "preview": {
+      "distribution": "internal"
+    },
+    "production": {
+      "autoIncrement": true
     }
   },
   "submit": {
