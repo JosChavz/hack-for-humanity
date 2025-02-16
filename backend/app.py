@@ -75,7 +75,8 @@ def google_auth():
                     name=userinfo['name'],
                     google_id=userinfo['sub'],
                     profilePicture=userinfo['picture'].encode('utf-8').decode('unicode_escape'),
-                    contributionNumber=0  # Add default value
+                    contributionNumber=0,  # Add default value
+                    favoriteSpecies=[]
                 )
                 user.save()
                 print("Created new user:", user.to_json())  # Debug log
@@ -95,7 +96,8 @@ def google_auth():
                     'email': user.email,
                     'name': user.name,
                     'profilePicture': user.profilePicture,
-                    'contributionNumber': user.contributionNumber
+                    'contributionNumber': user.contributionNumber,
+                    'favoriteSpecies': user.favoriteSpecies,
                 }
             })
 
@@ -248,7 +250,10 @@ def get_species_by_type():
             return jsonify({'error': 'Invalid coordinates format'}), 400
 
         sightings = Sighting.objects(type=species_type)
-        print("sightings", sightings)
+        print(
+            'crashing out!!'
+        )
+        print("sightings", sightings[0]['id'])
         species_data = {}
 
         for sighting in sightings:
@@ -270,7 +275,9 @@ def get_species_by_type():
                             'image': sighting.image,
                             'location': f"{sighting.latitude}, {sighting.longitude}",
                             'latest_time': sighting.created_at,
-                            'frequency': 1
+                            'frequency': 1,
+                            'id': str(sighting.id),
+                            'description': sighting.description,
                         }
                     else:
                         species_data[sighting.species]['frequency'] += 1
@@ -283,12 +290,14 @@ def get_species_by_type():
         response_data = []
         for species, data in species_data.items():
             response_data.append({
-                'id': str(len(response_data) + 1),
+                # 'id': str(len(response_data) + 1),
                 'species': species,
                 'image': data['image'],
                 'location': data['location'],
                 'latest_time': data['latest_time'].strftime('%Y-%m-%d %H:%M:%S'),
-                'frequency': data['frequency']
+                'frequency': data['frequency'],
+                'id': str(data['id']),
+                'description': data['description'],
             })
         
         return jsonify({'species': response_data})

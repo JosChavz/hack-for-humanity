@@ -14,6 +14,7 @@ interface SpeciesItem {
   location: string;
   latest_time: string;
   frequency: number;
+  description: string;
 }
 
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
@@ -107,7 +108,7 @@ export default function SpeciesDetailScreen() {
               image: item.image,
               frequency: item.frequency,
               location: item.location,
-              description: 'description goes here!?'
+              description: item.description,
             }
           }}>
             <View style={styles.cardContent}>
