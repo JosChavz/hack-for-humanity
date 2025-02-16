@@ -18,8 +18,11 @@ import requests  # Use the requests library for HTTP requests
 import datetime
 from models.sighting import Sighting
 from math import radians, sin, cos, sqrt, atan2
+import numpy as np
+from openai import OpenAI
+from bson import json_util
+import json
 
-# Import built-in json as stdjson to avoid conflicts with flask.json
 import json as stdjson
 
 load_dotenv()
@@ -31,8 +34,11 @@ app.secret_key = os.getenv('SECRET_KEY', 'your-secret-key-here')
 connect(host=os.getenv('DATABASE_URI'), ssl=True, tlscafile=certifi.where())
 
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))  # Configure Gemini API key ONCE
-model = genai.GenerativeModel("gemini-1.5-pro")
+model = genai.GenerativeModel("gemini-2.0-flash")
 
+# Initialize the model (do this at startup)
+# Initialize OpenAI client
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 @app.route('/auth/google', methods=['POST'])
 def google_auth():
@@ -164,43 +170,49 @@ def submit_sighting():
     try:
         data = request.get_json()
         
-        # Get the Base64 encoded image string from the request
-        base64_img = data.get('image')
-        if not base64_img:
-            return jsonify({"error": "No image provided"}), 400
-
-        # Upload the image to imgbb
+        # Upload image to ImgBB first
         imgbb_key = os.getenv("IMGBB_KEY")
+        if not imgbb_key:
+            return jsonify({"error": "ImgBB API key not configured"}), 500
+            
         imgbb_url = "https://api.imgbb.com/1/upload"
         payload = {
             "key": imgbb_key,
-            "image": base64_img
+            "image": data['image']  # This should be the base64 image
         }
-        imgbb_response = requests.post(imgbb_url, data=payload)
-        imgbb_json = imgbb_response.json()
-
-        # Check if the image hosting was successful
-        if not (imgbb_response.ok and imgbb_json.get("success")):
-            error_message = imgbb_json.get("error", {}).get("message", "Unknown error")
-            raise Exception("Image upload error: " + error_message)
-
-        # Extract the URL from the response
-        image_url = imgbb_json["data"]["url"]
-
-        # Create and save the Sighting document using the image URL
+        
+        # Upload to ImgBB
+        response = requests.post(imgbb_url, data=payload)
+        if not response.ok:
+            return jsonify({"error": "Failed to upload image"}), 500
+            
+        image_url = response.json()['data']['url']
+        
+        text_for_embedding = f"{data['species']} {data['type']} {data['description']}"
+        
+        # Generate embedding using OpenAI
+        response = client.embeddings.create(
+            model="text-embedding-3-small",
+            input=text_for_embedding
+        )
+        embedding_list = response.data[0].embedding
+        
         new_sighting = Sighting(
             latitude=str(data['latitude']),
             longitude=str(data['longitude']),
-            image=image_url,
+            image=image_url,  # Store the permanent URL instead of base64
             type=data['type'],
             species=data['species'],
             description=data['description'],
-            email=data['email']
+            email=data['email'],
+            embedding=embedding_list
         )
+        
         new_sighting.save()
-        return jsonify({"message": "Sighting saved successfully"})
+        return jsonify({"message": "Success", "id": str(new_sighting.id)}), 201
+        
     except Exception as e:
-        traceback.print_exc()
+        print(f"Error creating sighting: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
 def calculate_distance(lat1, lon1, lat2, lon2):
@@ -306,5 +318,56 @@ def get_sightings():
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
     
+@app.route('/vector-search', methods=['POST'])
+def vector_search():
+    try:
+        data = request.get_json()
+        query = data.get('query')
+        
+        if not query:
+            return jsonify({"error": "No query provided"}), 400
+
+        response = client.embeddings.create(
+            model="text-embedding-3-small",
+            input=query
+        )
+        query_embedding = response.data[0].embedding
+
+        pipeline = [
+            {
+                "$search": {
+                    "index": "default",
+                    "knnBeta": {
+                        "vector": query_embedding,
+                        "path": "embedding",
+                        "k": 10
+                    }
+                }
+            },
+            {
+                "$project": {
+                    "_id": { "$toString": "$_id" },  # Convert ObjectId to string
+                    "species": 1,
+                    "type": 1,
+                    "image": 1,
+                    "description": 1,
+                    "location_name": 1,
+                    "created_at": 1,
+                    "score": { "$meta": "searchScore" }
+                }
+            }
+        ]
+
+        results = list(Sighting.objects().aggregate(pipeline))
+        print(f"Found {len(results)} results")
+        
+        # Convert results to JSON-serializable format
+        serialized_results = json.loads(json_util.dumps(results))
+        return jsonify({"results": serialized_results})
+
+    except Exception as e:
+        print(f"Search error: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=9874, debug=True)
