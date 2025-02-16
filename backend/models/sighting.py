@@ -1,4 +1,4 @@
-from mongoengine import Document, StringField, EmailField, DateTimeField
+from mongoengine import Document, StringField, EmailField, DateTimeField, ListField, FloatField
 import datetime
 
 class Sighting(Document):
@@ -10,4 +10,16 @@ class Sighting(Document):
     description = StringField(required=True)
     email = EmailField(required=True)
     created_at = DateTimeField(default=datetime.datetime.utcnow)
-    meta = {'collection': 'sightings'}
+    embedding = ListField(FloatField(), required=False)
+    
+    meta = {
+        'collection': 'sightings',
+        'indexes': [
+            {
+                'fields': ['embedding'],
+                'cls': False,
+                'weights': {'embedding': 1},
+                'index_options': {'type': 'vectorSearch'}
+            }
+        ]
+    }

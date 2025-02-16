@@ -18,6 +18,8 @@ import requests  # Use the requests library for HTTP requests
 import datetime
 from models.sighting import Sighting
 from math import radians, sin, cos, sqrt, atan2
+from sentence_transformers import SentenceTransformer
+import numpy as np
 
 # Import built-in json as stdjson to avoid conflicts with flask.json
 import json as stdjson
@@ -31,8 +33,15 @@ app.secret_key = os.getenv('SECRET_KEY', 'your-secret-key-here')
 connect(host=os.getenv('DATABASE_URI'), ssl=True, tlscafile=certifi.where())
 
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))  # Configure Gemini API key ONCE
-model = genai.GenerativeModel("gemini-1.5-flash")
+model = genai.GenerativeModel("gemini-2.0-flash")
 
+# Initialize the model
+model = SentenceTransformer('all-MiniLM-L6-v2')
+
+# Initialize models
+model = SentenceTransformer('all-MiniLM-L6-v2')
+genai.configure(api_key=os.getenv('GOOGLE_API_KEY'))
+gemini_model = genai.GenerativeModel('gemini-2.0-flash')
 
 @app.route('/auth/google', methods=['POST'])
 def google_auth():
@@ -102,62 +111,34 @@ def google_auth():
 def analyze_image():
     try:
         data = request.get_json()
-        base64_image = data.get("image")
-
-        if not base64_image:
-            return jsonify({"error": "No image received"}), 400
-
-        # Decode the base64 string and open the image
-        image_data = base64.b64decode(base64_image)
-        image = Image.open(io.BytesIO(image_data))
-
-        # Define the prompt for Gemini
-        prompt = """
-        Analyze this image and provide a detailed response in JSON format with the following fields:
-        1. 'type': must be one of 'animal', 'bird', 'insect', or 'plant'
-        2. 'species': the specific species name
-        3. 'description': a brief description of what you see in the image and interesting facts about the species
+        base64_img = data.get('image')
         
-        Example response: 
-        {
-            "type": "bird",
-            "species": "Bald Eagle",
-            "description": "A majestic Bald Eagle perched on a tree branch. This species is known for its distinctive white head and is the national bird of the United States."
-        }
-        """
-
-        # Call the Gemini API to analyze the image
-        response = model.generate_content([prompt, image])
+        # Generate content analysis using Gemini
+        response = gemini_model.generate_content([
+            "Analyze this wildlife image and provide: \n1. Type (animal/bird/insect/plant)\n2. Species name\n3. Brief description",
+            base64_img
+        ])
         
-        # Log the raw response for debugging purposes
-        app.logger.debug("Gemini API raw response text: %s", response.text)
-
-        # Check if the response is empty or only whitespace
-        raw_text = response.text.strip()
-        if not raw_text:
-            raise ValueError("Empty response received from Gemini API")
+        # Parse Gemini response
+        analysis = response.text.split('\n')
+        type_match = next((line for line in analysis if 'Type:' in line), '')
+        species_match = next((line for line in analysis if 'Species:' in line), '')
+        description = '\n'.join(analysis[analysis.index(next(line for line in analysis if 'Description:' in line)):])
         
-        # If the response isn't pure JSON, try to extract the JSON object substring
-        if not (raw_text.startswith("{") and raw_text.endswith("}")):
-            first_brace = raw_text.find("{")
-            last_brace = raw_text.rfind("}")
-            if first_brace != -1 and last_brace != -1:
-                raw_text = raw_text[first_brace:last_brace+1]
-
-        # Attempt to parse the response as JSON using the standard library's json module
-        try:
-            response_data = stdjson.loads(raw_text)
-        except stdjson.JSONDecodeError as parse_err:
-            app.logger.error("Failed to parse JSON. Raw response text: %s", raw_text)
-            raise ValueError("Failed to parse response JSON from Gemini API") from parse_err
-
+        # Generate embedding for the description
+        embedding = model.encode(description).tolist()
+        
         return jsonify({
-            "analysis": response_data,
+            'analysis': {
+                'type': type_match.split(':')[1].strip().lower(),
+                'species': species_match.split(':')[1].strip(),
+                'description': description.replace('Description:', '').strip(),
+                'embedding': embedding
+            }
         })
-
     except Exception as e:
-        traceback.print_exc()
-        return jsonify({"error": str(e)}), 500
+        print(f"Error analyzing image: {str(e)}")
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/submit-sighting', methods=['POST'])
 def submit_sighting():
@@ -278,6 +259,57 @@ def get_species_by_type():
         
         return jsonify({'species': response_data})
     
+    except Exception as e:
+        print(f"Error: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/vector-search', methods=['POST'])
+def vector_search():
+    try:
+        data = request.get_json()
+        query = data.get('query', '')
+        
+        # Generate embedding for the search query
+        query_embedding = model.encode(query).tolist()
+        
+        # Perform vector search
+        pipeline = [
+            {
+                "$vectorSearch": {
+                    "queryVector": query_embedding,
+                    "path": "embedding",
+                    "numCandidates": 100,
+                    "limit": 10,
+                    "index": "vector_index",
+                }
+            },
+            {
+                "$project": {
+                    "species": 1,
+                    "type": 1,
+                    "image": 1,
+                    "description": 1,
+                    "latitude": 1,
+                    "longitude": 1,
+                    "created_at": 1,
+                    "score": { "$meta": "vectorSearchScore" }
+                }
+            }
+        ]
+        
+        results = list(Sighting.objects().aggregate(pipeline))
+        
+        return jsonify({
+            "species": [{
+                "id": str(result["_id"]),
+                "species": result["species"],
+                "image": result["image"],
+                "location": f"{result['latitude']}, {result['longitude']}",
+                "latest_time": result["created_at"].strftime('%Y-%m-%d %H:%M:%S'),
+                "description": result["description"],
+                "score": result["score"]
+            } for result in results]
+        })
     except Exception as e:
         print(f"Error: {str(e)}")
         return jsonify({'error': str(e)}), 500
