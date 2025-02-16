@@ -1,5 +1,5 @@
 import { View, StyleSheet, Image, ScrollView } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import {Link, useLocalSearchParams} from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { ThemedText } from '@/components/ThemedText';
@@ -72,6 +72,7 @@ export default function SpeciesDetailScreen() {
         });
 
         const data = await response.json();
+        console.log(data);
         console.log('Raw image URL:', data.species[0]?.image);
         
         // Clean the URL if needed
@@ -93,33 +94,45 @@ export default function SpeciesDetailScreen() {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
-        <ThemedText style={styles.title}>{getTypeTitle(id as string)}</ThemedText>
+        <ThemedText className={'text-4xl font-bold mt-4 mb-2'} style={styles.title}>{getTypeTitle(id as string)}</ThemedText>
       </View>
 
       {speciesData.map((item) => (
         <Card key={item.id} className="w-full mb-4">
-          <View style={styles.cardContent}>
-            <ExpoImage
-              source={{ uri: item.image }}
-              style={styles.image}
-              contentFit="cover"
-              cachePolicy="memory-disk"
-              transition={200}
-              onError={(error) => {
-                console.error('Image loading error:', error);
-                console.log('Failed URL:', item.image);
-              }}
-              placeholder={require('../../assets/images/favicon.png')}
-            />
-            <View style={styles.infoContainer}>
-              <ThemedText style={styles.speciesName}>{item.species}</ThemedText>
-              <ThemedText style={styles.location}>{item.location}</ThemedText>
-              <ThemedText style={styles.time}>Last seen: {item.latest_time}</ThemedText>
-              <ThemedText style={styles.frequency}>
-                Spotted {item.frequency} times nearby
-              </ThemedText>
+          <Link href={{
+            pathname: `/species/specie/${item.id}`,
+            params: {
+              id: item.id,
+              species: item.species,
+              image: item.image,
+              frequency: item.frequency,
+              location: item.location,
+              description: 'description goes here!?'
+            }
+          }}>
+            <View style={styles.cardContent}>
+              <ExpoImage
+                  source={{ uri: item.image }}
+                  style={styles.image}
+                  contentFit="cover"
+                  cachePolicy="memory-disk"
+                  transition={200}
+                  onError={(error) => {
+                    console.error('Image loading error:', error);
+                    console.log('Failed URL:', item.image);
+                  }}
+                  placeholder={require('../../assets/images/favicon.png')}
+              />
+              <View style={styles.infoContainer}>
+                <ThemedText style={styles.speciesName}>{item.species}</ThemedText>
+                <ThemedText style={styles.location}>{item.location}</ThemedText>
+                <ThemedText style={styles.time}>Last seen: {item.latest_time}</ThemedText>
+                <ThemedText style={styles.frequency}>
+                  Spotted {item.frequency} times nearby
+                </ThemedText>
+              </View>
             </View>
-          </View>
+          </Link>
         </Card>
       ))}
     </ScrollView>
