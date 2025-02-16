@@ -15,7 +15,6 @@ import jwt
 import requests
 from models.user import User
 from google.oauth2 import id_token
-from google.auth.transport import requests
 import jwt
 import datetime
 
