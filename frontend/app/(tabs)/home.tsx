@@ -3,8 +3,9 @@
 import { LocationObject, requestForegroundPermissionsAsync, getCurrentPositionAsync, watchPositionAsync, LocationAccuracy } from 'expo-location';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { useEffect, useRef, useState } from 'react';
-import { View, StyleSheet, Text, Animated, Easing } from 'react-native';
+import { View, StyleSheet, Text, Animated, Easing, Alert } from 'react-native';
 import Constants from 'expo-constants';
+import * as SecureStore from 'expo-secure-store';
 
 interface Sighting {
   id: string;
@@ -18,6 +19,7 @@ interface Sighting {
 export default function HomeScreen() {
   const [sightings, setSightings] = useState<Sighting[]>([]);
   const [location, setLocation] = useState<LocationObject | null>(null);
+  const [userInfo, setUserInfo] = useState<any | null>(null);
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const opacityAnim = useRef(new Animated.Value(1)).current;
   const [region, setRegion] = useState<{latitude: number; longitude: number; latitudeDelta: number; longitudeDelta: number}>({
@@ -31,6 +33,38 @@ export default function HomeScreen() {
   useEffect(() => {
     fetchSightings();
     requestLocationPermission();
+  }, []);
+
+  useEffect(() => {
+    // console.log(userInfo?.favoriteSpecies, sightings)
+    if (!userInfo?.favoriteSpecies || sightings.length === 0) return;
+  
+    const favoriteSightings = sightings.filter(sighting =>
+      userInfo.favoriteSpecies.includes(sighting.species)
+    );
+
+    console.log(userInfo?.favoriteSpecies, favoriteSightings)
+  
+    if (favoriteSightings.length > 0) {
+      const uniqueSpecies = Array.from(new Set(favoriteSightings.map(s => s.species)));
+      Alert.alert(
+        'Favorite Species Nearby!',
+        `You have favorite species nearby: ${uniqueSpecies}. Check the map!`,
+        [{ text: 'OK' }]
+      );
+    }
+  }, [sightings, userInfo]);
+
+
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      const storedUserInfo = await SecureStore.getItemAsync('userInfo');
+      if (storedUserInfo) {
+        setUserInfo(JSON.parse(storedUserInfo));
+      }
+    };
+
+    fetchUserInfo();
   }, []);
 
   const fetchSightings = async () => {
@@ -91,13 +125,13 @@ export default function HomeScreen() {
     Animated.loop(
       Animated.parallel([
         Animated.timing(pulseAnim, {
-          toValue: 1.2, // Bigger pulse
-          duration: 2000, // Slower for smooth effect
+          toValue: 1.2,
+          duration: 2000,
           easing: Easing.inOut(Easing.ease),
           useNativeDriver: true,
         }),
         Animated.timing(opacityAnim, {
-          toValue: 0, // Fade out
+          toValue: 0, 
           duration: 2000,
           useNativeDriver: true,
         }),
@@ -114,7 +148,6 @@ export default function HomeScreen() {
         distanceInterval: 10000, 
       }, 
       (response) => {
-        console.log(response)
         setLocation(response);
         setRegion({
           latitude: response.coords.latitude,
@@ -160,6 +193,7 @@ export default function HomeScreen() {
               }}
               title={sighting.species}
               description={`Type: ${sighting.type}`}
+              style={{zIndex: 5}}
             />
           ))}
         </MapView>
@@ -181,21 +215,21 @@ const styles = StyleSheet.create({
   markerContainer: {
     justifyContent: 'center',
     alignItems: 'center',
-    position: 'absolute', // Keeps everything positioned correctly
-    width: 100, // Enough space for pulsing effect
+    position: 'absolute',
+    width: 100,
     height: 100,
     overflow: 'visible',
   },
   markerOuter: {
     position: 'absolute', 
-    width: 40, // Pulsing effect size
+    width: 40,
     height: 40,
     borderRadius: 25,
     backgroundColor: 'rgba(0, 122, 255, 0.3)',
     overflow: 'visible'
   },
   markerInner: {
-    width: 20, // Small dot in the center
+    width: 20,
     height: 20,
     borderRadius: 10,
     backgroundColor: 'blue',

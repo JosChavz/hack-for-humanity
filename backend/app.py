@@ -8,6 +8,7 @@ import google.generativeai as genai
 import io
 from PIL import Image
 import traceback
+from models.report import Report
 from models.user import User
 from mongoengine import connect
 import certifi
@@ -34,11 +35,9 @@ app.secret_key = os.getenv('SECRET_KEY', 'your-secret-key-here')
 connect(host=os.getenv('DATABASE_URI'), ssl=True, tlscafile=certifi.where())
 
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))  # Configure Gemini API key ONCE
-model = genai.GenerativeModel("gemini-2.0-flash")
-
-# Initialize the model (do this at startup)
-# Initialize OpenAI client
+model = genai.GenerativeModel("gemini-1.5-pro")
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
 
 @app.route('/auth/google', methods=['POST'])
 def google_auth():
@@ -75,7 +74,8 @@ def google_auth():
                     name=userinfo['name'],
                     google_id=userinfo['sub'],
                     profilePicture=userinfo['picture'].encode('utf-8').decode('unicode_escape'),
-                    contributionNumber=0  # Add default value
+                    contributionNumber=0,  # Add default value
+                    favoriteSpecies=[]
                 )
                 user.save()
                 print("Created new user:", user.to_json())  # Debug log
@@ -95,7 +95,8 @@ def google_auth():
                     'email': user.email,
                     'name': user.name,
                     'profilePicture': user.profilePicture,
-                    'contributionNumber': user.contributionNumber
+                    'contributionNumber': user.contributionNumber,
+                    'favoriteSpecies': user.favoriteSpecies
                 }
             })
 
@@ -173,49 +174,43 @@ def submit_sighting():
     try:
         data = request.get_json()
         
-        # Upload image to ImgBB first
+        # Get the Base64 encoded image string from the request
+        base64_img = data.get('image')
+        if not base64_img:
+            return jsonify({"error": "No image provided"}), 400
+
+        # Upload the image to imgbb
         imgbb_key = os.getenv("IMGBB_KEY")
-        if not imgbb_key:
-            return jsonify({"error": "ImgBB API key not configured"}), 500
-            
         imgbb_url = "https://api.imgbb.com/1/upload"
         payload = {
             "key": imgbb_key,
-            "image": data['image']  # This should be the base64 image
+            "image": base64_img
         }
-        
-        # Upload to ImgBB
-        response = requests.post(imgbb_url, data=payload)
-        if not response.ok:
-            return jsonify({"error": "Failed to upload image"}), 500
-            
-        image_url = response.json()['data']['url']
-        
-        text_for_embedding = f"{data['species']} {data['type']} {data['description']}"
-        
-        # Generate embedding using OpenAI
-        response = client.embeddings.create(
-            model="text-embedding-3-small",
-            input=text_for_embedding
-        )
-        embedding_list = response.data[0].embedding
-        
+        imgbb_response = requests.post(imgbb_url, data=payload)
+        imgbb_json = imgbb_response.json()
+
+        # Check if the image hosting was successful
+        if not (imgbb_response.ok and imgbb_json.get("success")):
+            error_message = imgbb_json.get("error", {}).get("message", "Unknown error")
+            raise Exception("Image upload error: " + error_message)
+
+        # Extract the URL from the response
+        image_url = imgbb_json["data"]["url"]
+
+        # Create and save the Sighting document using the image URL
         new_sighting = Sighting(
             latitude=str(data['latitude']),
             longitude=str(data['longitude']),
-            image=image_url,  # Store the permanent URL instead of base64
+            image=image_url,
             type=data['type'],
             species=data['species'],
             description=data['description'],
-            email=data['email'],
-            embedding=embedding_list
+            email=data['email']
         )
-        
         new_sighting.save()
-        return jsonify({"message": "Success", "id": str(new_sighting.id)}), 201
-        
+        return jsonify({"message": "Sighting saved successfully"})
     except Exception as e:
-        print(f"Error creating sighting: {str(e)}")
+        traceback.print_exc()
         return jsonify({"error": str(e)}), 500
 
 def calculate_distance(lat1, lon1, lat2, lon2):
@@ -320,7 +315,7 @@ def get_sightings():
     except Exception as e:
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
-    
+
 @app.route('/vector-search', methods=['POST'])
 def vector_search():
     try:
@@ -370,6 +365,35 @@ def vector_search():
 
     except Exception as e:
         print(f"Search error: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
+from flask import request, jsonify
+import traceback
+
+@app.route('/submit-report', methods=['POST'])
+def submit_report():
+    try:
+        data = request.json
+        report_type = data.get('report_type')
+        latitude = data.get('latitude')
+        longitude = data.get('longitude')
+        email = data.get('email')
+
+        if not all([report_type, latitude, longitude, email]):
+            return jsonify({"error": "Missing required fields"}), 400
+
+        new_report = Report(
+            report_type=report_type,
+            latitude=latitude,
+            longitude=longitude,
+            email=email
+        )
+        new_report.save()
+
+        return jsonify({"message": "Report submitted successfully"}), 201
+
+    except Exception as e:
+        traceback.print_exc()
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':

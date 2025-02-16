@@ -13,7 +13,6 @@ export default function ProfileScreen() {
     const fetchUserInfo = async () => {
       const storedUserInfo = await SecureStore.getItemAsync('userInfo');
       if (storedUserInfo) {
-        console.log(JSON.parse(storedUserInfo))
         setUserInfo(JSON.parse(storedUserInfo));
       }
     };
@@ -61,7 +60,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: 'center',
-    marginTop: 40,
+    marginTop: 20,
     // justifyContent: 'center',
     paddingHorizontal: 20,
   },
