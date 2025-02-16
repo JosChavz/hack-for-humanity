@@ -43,11 +43,11 @@ export default function RootLayout() {
       try {
         const userInfo = await SecureStore.getItemAsync('userInfo');
         if (!userInfo) {
-          router.replace('/auth');
+          router.replace('/');
         }
       } catch (error) {
         console.error('Error retrieving user info:', error);
-        router.replace('/auth');
+        router.replace('/');
       }
     }
     checkAuth();
@@ -56,8 +56,16 @@ export default function RootLayout() {
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="/" options={{ headerShown: false }} />
+        <Stack.Screen name="/home" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="auth" options={{ headerShown: false }} />
+        <Stack.Screen 
+          name="species/[id]" 
+          options={{ 
+            headerShown: true,
+            headerTitle: "Species Details"
+          }} 
+        />
       </Stack>
       <StatusBar style="auto" />
     </ThemeProvider>

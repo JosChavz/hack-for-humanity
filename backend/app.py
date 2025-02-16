@@ -17,6 +17,7 @@ from google.oauth2 import id_token
 import requests  # Use the requests library for HTTP requests
 import datetime
 from models.sighting import Sighting
+from math import radians, sin, cos, sqrt, atan2
 
 # Import built-in json as stdjson to avoid conflicts with flask.json
 import json as stdjson
@@ -201,6 +202,85 @@ def submit_sighting():
     except Exception as e:
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
+
+def calculate_distance(lat1, lon1, lat2, lon2):
+    R = 6371  # Earth's radius in kilometers
+
+    lat1, lon1, lat2, lon2 = map(radians, [float(lat1), float(lon1), float(lat2), float(lon2)])
+    
+    dlat = lat2 - lat1
+    dlon = lon2 - lon1
+    
+    a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
+    c = 2 * atan2(sqrt(a), sqrt(1-a))
+    distance = R * c
+    
+    return distance
+
+@app.route('/get-species-by-type', methods=['POST'])
+def get_species_by_type():
+    try:
+        data = request.get_json()
+        species_type = data.get('type')
+        
+        if not all(key in data for key in ['type', 'latitude', 'longitude']):
+            return jsonify({'error': 'Missing required fields'}), 400
+            
+        try:
+            user_lat = float(data.get('latitude'))
+            user_lon = float(data.get('longitude'))
+        except (TypeError, ValueError):
+            return jsonify({'error': 'Invalid coordinates format'}), 400
+
+        sightings = Sighting.objects(type=species_type)
+        print("sightings", sightings)
+        species_data = {}
+
+        for sighting in sightings:
+            
+            if not sighting.latitude or not sighting.longitude:
+                continue
+                
+            try:
+                distance = calculate_distance(
+                    user_lat, 
+                    user_lon, 
+                    float(sighting.latitude), 
+                    float(sighting.longitude)
+                )
+                
+                if distance <= 3.21869:
+                    if sighting.species not in species_data:
+                        species_data[sighting.species] = {
+                            'image': sighting.image,
+                            'location': f"{sighting.latitude}, {sighting.longitude}",
+                            'latest_time': sighting.created_at,
+                            'frequency': 1
+                        }
+                    else:
+                        species_data[sighting.species]['frequency'] += 1
+                        if sighting.created_at > species_data[sighting.species]['latest_time']:
+                            species_data[sighting.species]['latest_time'] = sighting.created_at
+            except ValueError:
+                continue
+
+        # Format the response
+        response_data = []
+        for species, data in species_data.items():
+            response_data.append({
+                'id': str(len(response_data) + 1),
+                'species': species,
+                'image': data['image'],
+                'location': data['location'],
+                'latest_time': data['latest_time'].strftime('%Y-%m-%d %H:%M:%S'),
+                'frequency': data['frequency']
+            })
+        
+        return jsonify({'species': response_data})
+    
+    except Exception as e:
+        print(f"Error: {str(e)}")
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=9874, debug=True)

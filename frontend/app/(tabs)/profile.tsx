@@ -13,7 +13,7 @@ export default function ProfileScreen() {
         SecureStore.deleteItemAsync('userInfo')
       ]);
 
-      router.replace('/auth');
+      router.replace('/');
     } catch (error) {
       console.error('Error during logout:', error);
     }

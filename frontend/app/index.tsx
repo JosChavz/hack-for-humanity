@@ -67,7 +67,7 @@ export default function Auth() {
         await SecureStore.setItemAsync('userInfo', JSON.stringify(user));
 
         console.log("User info:", user);
-        router.replace('/(tabs)');
+        router.replace('/home');
       } catch (error) {
         console.log('Authentication error details:', error);
       }

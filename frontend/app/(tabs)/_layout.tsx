@@ -15,7 +15,7 @@ export default function TabLayout() {
 
   const CloseButton = ({ color }: { color: string }) => (
     <TouchableOpacity 
-      onPress={() => router.replace('/')} 
+      onPress={() => router.replace('/home')} 
       style={{ padding: 8, marginLeft: 8 }}
     >
       <IconSymbol size={24} name="xmark" color={color} />
@@ -38,7 +38,7 @@ export default function TabLayout() {
         }),
       }}>
       <Tabs.Screen
-        name="index"
+        name="home"
         options={{
           title: 'Home',
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
@@ -47,7 +47,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="species"
         options={{
-          title: 'Species',
+          title: 'species',
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="leaf.fill" color={color} />,
         }}
       />

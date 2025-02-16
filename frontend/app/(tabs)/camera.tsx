@@ -39,7 +39,7 @@ export default function CameraScreen() {
   const handleClose = () => {
     setModalVisible(false);
     setTimeout(() => {
-      router.push('/');
+      router.push('/home');
     }, 300);
   };
 
