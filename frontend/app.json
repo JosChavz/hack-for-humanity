@@ -10,14 +10,14 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.frontend"
+      "bundleIdentifier": "com.humanity-hacks.humanity-hacks"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.anonymous.frontend"
+      "package": "com.humanity-hacks.humanity-hacks"
     },
     "web": {
       "bundler": "metro",
@@ -51,7 +51,7 @@
         "origin": false
       },
       "eas": {
-        "projectId": "fa86fc1b-f094-4743-bf1e-b4724042d242"
+        "projectId": "83febafb-6bb1-47c4-b92c-d10f82ed22f4"
       }
     }
   }
