@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useFocusEffect } from "expo-router";
-import { Alert, StyleSheet, View, Modal, Pressable, ActivityIndicator, ScrollView, Dimensions } from "react-native";
+import { Alert, StyleSheet, View, Modal, Pressable, ActivityIndicator, ScrollView, Dimensions, TextInput } from "react-native";
 import Constants from "expo-constants";
 import * as ImagePicker from 'expo-image-picker';
 import * as SecureStore from 'expo-secure-store';
@@ -13,9 +13,12 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useCallback } from 'react';
 
+const VALID_TYPES = ['animal', 'bird', 'insect', 'plant'] as const;
+type ValidType = typeof VALID_TYPES[number];
+
 interface SightingData {
   image: string;
-  type: string;
+  type: ValidType;
   species: string;
   description: string;
 }
@@ -29,6 +32,9 @@ export default function CameraScreen() {
   const [loading, setLoading] = useState(false);
   const [currentSighting, setCurrentSighting] = useState<SightingData | null>(null);
   const [base64Image, setBase64Image] = useState<string | null>(null);
+  const [editableSpecies, setEditableSpecies] = useState<string>('');
+  const [editableType, setEditableType] = useState<ValidType>('animal');
+  const [editableDescription, setEditableDescription] = useState<string>('');
 
   useFocusEffect(
     useCallback(() => {
@@ -91,6 +97,10 @@ export default function CameraScreen() {
         species: data.analysis.species,
         description: data.analysis.description
       });
+
+      setEditableSpecies(data.analysis.species);
+      setEditableType(data.analysis.type);
+      setEditableDescription(data.analysis.description);
     } catch (error) {
       console.error('Error analyzing image:', error);
       Alert.alert('Error', 'Failed to analyze image');
@@ -119,9 +129,9 @@ export default function CameraScreen() {
           latitude: location?.coords.latitude,
           longitude: location?.coords.longitude,
           email: JSON.parse(userInfo).email,
-          type: currentSighting.type,
-          species: currentSighting.species,
-          description: currentSighting.description
+          type: editableType,
+          species: editableSpecies,
+          description: editableDescription
         }),
       });
 
@@ -179,15 +189,44 @@ export default function CameraScreen() {
                 
                 <View style={styles.contentContainer}>
                   <View style={styles.header}>
-                    <ThemedText style={styles.species}>{currentSighting?.species || 'Unknown Species'}</ThemedText>
-                    <ThemedText style={styles.type}>{currentSighting?.type || 'Upload an image to identify'}</ThemedText>
+                    <TextInput
+                      style={[styles.species, styles.input]}
+                      value={editableSpecies}
+                      onChangeText={setEditableSpecies}
+                      placeholder="Species name"
+                    />
+                    <View style={styles.typeContainer}>
+                      {VALID_TYPES.map((type) => (
+                        <Pressable
+                          key={type}
+                          style={[
+                            styles.typeButton,
+                            editableType === type && styles.typeButtonSelected
+                          ]}
+                          onPress={() => setEditableType(type)}
+                        >
+                          <ThemedText
+                            style={[
+                              styles.typeButtonText,
+                              editableType === type && styles.typeButtonTextSelected
+                            ]}
+                          >
+                            {type}
+                          </ThemedText>
+                        </Pressable>
+                      ))}
+                    </View>
                   </View>
 
                   <View style={styles.descriptionContainer}>
                     <ThemedText style={styles.descriptionLabel}>About</ThemedText>
-                    <ThemedText style={styles.description}>
-                      {currentSighting?.description || 'A detailed description will appear here after you upload an image.'}
-                    </ThemedText>
+                    <TextInput
+                      style={[styles.description, styles.input]}
+                      value={editableDescription}
+                      onChangeText={setEditableDescription}
+                      placeholder="Description"
+                      multiline
+                    />
                   </View>
 
                   <View style={styles.buttonContainer}>
@@ -280,10 +319,30 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     color: '#333',
   },
-  type: {
-    fontSize: 18,
+  typeContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 8,
+  },
+  typeButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    backgroundColor: 'white',
+  },
+  typeButtonSelected: {
+    backgroundColor: '#0a7ea4',
+    borderColor: '#0a7ea4',
+  },
+  typeButtonText: {
     color: '#666',
-    textTransform: 'capitalize',
+    fontSize: 14,
+  },
+  typeButtonTextSelected: {
+    color: 'white',
   },
   descriptionContainer: {
     marginBottom: 32,
@@ -313,5 +372,12 @@ const styles = StyleSheet.create({
     right: 12,
     zIndex: 1,
     padding: 8,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 8,
+    marginBottom: 8,
   },
 }); 

@@ -31,7 +31,7 @@ app.secret_key = os.getenv('SECRET_KEY', 'your-secret-key-here')
 connect(host=os.getenv('DATABASE_URI'), ssl=True, tlscafile=certifi.where())
 
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))  # Configure Gemini API key ONCE
-model = genai.GenerativeModel("gemini-1.5-flash")
+model = genai.GenerativeModel("gemini-1.5-pro")
 
 
 @app.route('/auth/google', methods=['POST'])
