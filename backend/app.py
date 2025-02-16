@@ -110,44 +110,44 @@ def upload_image():
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=9874, debug=True)
 
-@app.route('/auth/google', methods=['POST'])
-def google_auth():
-    token = request.json.get('token')
-    try:
-        # Verify Google token
-        idinfo = id_token.verify_oauth2_token(
-            token, 
-            requests.Request(), 
-            'YOUR_GOOGLE_CLIENT_ID'
-        )
-
-        # Create or update user in database
-        user = User.objects(email=idinfo['email']).first()
-        if not user:
-            user = User(
-                email=idinfo['email'],
-                name=idinfo['name']
-            ).save()
-
-        # Create session token
-        session_token = jwt.encode(
-            {
-                'user_id': str(user.id),
-                'exp': datetime.datetime.utcnow() + datetime.timedelta(days=7)
-            },
-            app.config['SECRET_KEY'],
-            algorithm='HS256'
-        )
-
-        return jsonify({
-            'sessionToken': session_token,
-            'user': {
-                'id': str(user.id),
-                'email': user.email,
-                'name': user.name
-            }
-        })
-
-    except ValueError as e:
-        return jsonify({'error': 'Invalid token'}), 401
-    
+# @app.route('/auth/google', methods=['POST'])
+# def google_auth():
+#     token = request.json.get('token')
+#     try:
+#         # Verify Google token
+#         idinfo = id_token.verify_oauth2_token(
+#             token,
+#             requests.Request(),
+#             'YOUR_GOOGLE_CLIENT_ID'
+#         )
+#
+#         # Create or update user in database
+#         user = User.objects(email=idinfo['email']).first()
+#         if not user:
+#             user = User(
+#                 email=idinfo['email'],
+#                 name=idinfo['name']
+#             ).save()
+#
+#         # Create session token
+#         session_token = jwt.encode(
+#             {
+#                 'user_id': str(user.id),
+#                 'exp': datetime.datetime.utcnow() + datetime.timedelta(days=7)
+#             },
+#             app.config['SECRET_KEY'],
+#             algorithm='HS256'
+#         )
+#
+#         return jsonify({
+#             'sessionToken': session_token,
+#             'user': {
+#                 'id': str(user.id),
+#                 'email': user.email,
+#                 'name': user.name
+#             }
+#         })
+#
+#     except ValueError as e:
+#         return jsonify({'error': 'Invalid token'}), 401
+#
