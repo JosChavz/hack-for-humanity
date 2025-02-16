@@ -12,11 +12,9 @@ from models.user import User
 from mongoengine import connect
 import certifi
 import jwt
-import requests
 from models.user import User
 from google.oauth2 import id_token
-from google.auth.transport import requests
-import jwt
+import requests  # Use the requests library for HTTP requests
 import datetime
 
 load_dotenv()
@@ -30,56 +28,70 @@ connect(host=os.getenv('DATABASE_URI'), ssl=True, tlscafile=certifi.where())
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))  # Configure Gemini API key ONCE
 model = genai.GenerativeModel("gemini-2.0-flash")
 
-@app.route('/test-route', methods=['GET'])
-def testRoute():
-    print('hey this is a test')
-    return jsonify({"message": "Test successful!"}), 200
 
 @app.route('/auth/google', methods=['POST'])
 def google_auth():
     try:
         token = request.json.get('token')
+        print("Received token:", token)  # Debug log
+        
         if not token:
             return jsonify({"error": "No token provided"}), 400
 
+        # Use the requests library to make the HTTP request
         userinfo_response = requests.get(
-            'https://www.googleapis.com/oauth2/v3/userinfo',  # Updated endpoint
+            'https://www.googleapis.com/oauth2/v3/userinfo',
             headers={'Authorization': f'Bearer {token}'}
         )
         
+        print("Google API response status:", userinfo_response.status_code)  # Debug log
+        print("Google API response:", userinfo_response.text)  # Debug log
+        
         if not userinfo_response.ok:
-            return jsonify({"error": "Failed to get user info"}), 400
+            return jsonify({
+                "error": "Failed to get user info",
+                "details": userinfo_response.text
+            }), 400
 
         userinfo = userinfo_response.json()
+        print("User info from Google:", userinfo)  # Debug log
         
-        user = User.objects(email=userinfo['email']).first()
-        print("here", user)
-        if not user:
-            user = User(
-                email=userinfo['email'],
-                name=userinfo['name'],
-                google_id=userinfo['sub'] 
+        try:
+            user = User.objects(email=userinfo['email']).first()
+            if not user:
+                user = User(
+                    email=userinfo['email'],
+                    name=userinfo['name'],
+                    google_id=userinfo['sub'],
+                    contributionNumber=0  # Add default value
+                )
+                user.save()
+                print("Created new user:", user.to_json())  # Debug log
+            else:
+                print("Found existing user:", user.to_json())  # Debug log
+
+            session_token = jwt.encode(
+                {'user_id': str(user.id), 'email': user.email},
+                app.secret_key,
+                algorithm='HS256'
             )
-            user.save()
 
-        session_token = jwt.encode(
-            {'user_id': str(user.id), 'email': user.email},
-            app.secret_key,
-            algorithm='HS256'
-        )
+            return jsonify({
+                'sessionToken': session_token,
+                'user': {
+                    'id': str(user.id),
+                    'email': user.email,
+                    'name': user.name
+                }
+            })
 
-        return jsonify({
-            'sessionToken': session_token,
-            'user': {
-                'id': str(user.id),
-                'email': user.email,
-                'name': user.name
-            }
-        })
+        except Exception as e:
+            print("Database error:", str(e))  # Debug log
+            return jsonify({"error": f"Database error: {str(e)}"}), 500
 
     except Exception as e:
-        print('Auth error:', str(e))
-        return jsonify({"error": "Authentication failed"}), 500
+        print("Authentication error:", str(e))  # Debug log
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/upload-image', methods=['POST'])
 def upload_image():
@@ -110,45 +122,3 @@ def upload_image():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=9874, debug=True)
-
-@app.route('/auth/google', methods=['POST'])
-def google_auth():
-    token = request.json.get('token')
-    try:
-        # Verify Google token
-        idinfo = id_token.verify_oauth2_token(
-            token, 
-            requests.Request(), 
-            'YOUR_GOOGLE_CLIENT_ID'
-        )
-
-        # Create or update user in database
-        user = User.objects(email=idinfo['email']).first()
-        if not user:
-            user = User(
-                email=idinfo['email'],
-                name=idinfo['name']
-            ).save()
-
-        # Create session token
-        session_token = jwt.encode(
-            {
-                'user_id': str(user.id),
-                'exp': datetime.datetime.utcnow() + datetime.timedelta(days=7)
-            },
-            app.config['SECRET_KEY'],
-            algorithm='HS256'
-        )
-
-        return jsonify({
-            'sessionToken': session_token,
-            'user': {
-                'id': str(user.id),
-                'email': user.email,
-                'name': user.name
-            }
-        })
-
-    except ValueError as e:
-        return jsonify({'error': 'Invalid token'}), 401
-    
