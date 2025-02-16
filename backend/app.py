@@ -134,7 +134,7 @@ def upload_image():
             new_sighting = Sighting(
                 latitude=str(latitude),
                 longitude=str(longitude),
-                image=base64_image,  # Storing the image as base64
+                image='https://imgur.com/a/Zrn948W',  # Storing the image as base64
                 type=sighting_type,
                 species=species,
                 email=email
@@ -150,6 +150,31 @@ def upload_image():
     except Exception as e:
         traceback.print_exc()  # Print the full traceback for debugging
         return jsonify({"error": str(e)}), 500
+
+
+@app.route('/get-sightings', methods=['GET'])
+def get_sightings():
+    try:
+        sightings = Sighting.objects()
+        sightings_list = [
+            {
+                "id": str(sighting.id),
+                "latitude": sighting.latitude,
+                "longitude": sighting.longitude,
+                "image": sighting.image,  # Optional: Omit if not needed
+                "type": sighting.type,
+                "species": sighting.species,
+                "email": sighting.email
+            }
+            for sighting in sightings
+        ]
+        return jsonify({"sightings": sightings_list}), 200  # Wrapped inside "sightings" key
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
+
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=9874, debug=True)
