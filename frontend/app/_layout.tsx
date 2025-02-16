@@ -67,6 +67,14 @@ export default function RootLayout() {
             headerBackTitle: "Back",
           }} 
         />
+        <Stack.Screen
+            name="species/specie/[sId]"
+            options={{
+              headerShown: true,
+              headerTitle: "Specie Detail",
+              headerBackTitle: "Back",
+            }}
+        />
       </Stack>
       <StatusBar style="auto" />
     </ThemeProvider>

@@ -7,6 +7,7 @@ import { Image as ExpoImage } from 'expo-image';
 import Constants from 'expo-constants';
 import debounce from 'lodash/debounce';
 import { ThemedText } from '@/components/ThemedText';
+import {Icon} from "react-native-elements";
 
 interface SearchResult {
   species: string;
@@ -103,7 +104,12 @@ export default function SpeciesScreen() {
           <Link href="/species/1">
             <Card className="w-full">
               <CardHeader style={{ backgroundColor: '#2D3250', borderRadius: 12 }}>
-                <CardTitle className="text-white">Animals</CardTitle>
+                <CardTitle>
+                  <View className="w-full flex flex-row content-center text-white items-center justify-between">
+                    <Text className={'text-2xl font-bold text-white'}>Animals</Text>
+                    <Icon size={35} className={'ml-auto'} name={'arrow-right'} color={'white'} />
+                  </View>
+                </CardTitle>
               </CardHeader>
             </Card>
           </Link>
@@ -111,7 +117,12 @@ export default function SpeciesScreen() {
           <Link href="/species/2">
             <Card className="w-full">
               <CardHeader style={{ backgroundColor: '#424769', borderRadius: 12 }}>
-                <CardTitle className="text-white">Birds</CardTitle>
+                <CardTitle className="text-white">
+                  <View className="w-full flex flex-row content-center text-white items-center justify-between">
+                    <Text className={'text-2xl font-bold text-white'}>Birds</Text>
+                    <Icon size={35} className={'ml-auto'} name={'arrow-right'} color={'white'} />
+                  </View>
+                </CardTitle>
               </CardHeader>
             </Card>
           </Link>
@@ -119,7 +130,13 @@ export default function SpeciesScreen() {
           <Link href="/species/3" >
             <Card className="w-full">
               <CardHeader style={{ backgroundColor: '#7077A1', borderRadius: 12 }}>
-                <CardTitle className="text-white">Plants</CardTitle>
+                <CardTitle className="text-white">
+                  <View className="w-full flex flex-row content-center text-white items-center justify-between">
+                    <Text className={'text-2xl font-bold text-white'}>Plants</Text>
+                    <Icon size={35} className={'ml-auto'} name={'arrow-right'} color={'white'} />
+                  </View>
+
+                </CardTitle>
               </CardHeader>
             </Card>
           </Link>
@@ -127,7 +144,12 @@ export default function SpeciesScreen() {
           <Link href="/species/4">
             <Card className="w-full">
               <CardHeader style={{ backgroundColor: '#576CBC', borderRadius: 12 }}>
-                <CardTitle className="text-white">Insects</CardTitle>
+                <CardTitle className="text-white">
+                  <View className="w-full flex flex-row content-center text-white items-center justify-between">
+                    <Text className={'text-2xl font-bold text-white'}>Insects</Text>
+                    <Icon size={35} className={'ml-auto'} name={'arrow-right'} color={'white'} />
+                  </View>
+                </CardTitle>
               </CardHeader>
             </Card>
           </Link>
