@@ -72,7 +72,16 @@ export default function SpeciesDetailScreen() {
         });
 
         const data = await response.json();
-        setSpeciesData(data.species);
+        console.log('Raw image URL:', data.species[0]?.image);
+        
+        // Clean the URL if needed
+        const cleanedData = data.species.map((item: SpeciesItem) => ({
+          ...item,
+          image: item.image.replace(/([^:]\/)\/+/g, "$1") // Remove any double slashes except after protocol
+        }));
+        
+        console.log('Cleaned image URL:', cleanedData[0]?.image);
+        setSpeciesData(cleanedData);
       } catch (error) {
         console.error('Error fetching species data:', error);
       }
@@ -94,6 +103,13 @@ export default function SpeciesDetailScreen() {
               source={{ uri: item.image }}
               style={styles.image}
               contentFit="cover"
+              cachePolicy="memory-disk"
+              transition={200}
+              onError={(error) => {
+                console.error('Image loading error:', error);
+                console.log('Failed URL:', item.image);
+              }}
+              placeholder={require('../../assets/images/favicon.png')}
             />
             <View style={styles.infoContainer}>
               <ThemedText style={styles.speciesName}>{item.species}</ThemedText>
