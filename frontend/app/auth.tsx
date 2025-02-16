@@ -1,4 +1,4 @@
-import { StyleSheet, View, Image } from 'react-native';
+import { StyleSheet, View, Image, Platform } from 'react-native';
 import React, { useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import * as Google from 'expo-auth-session/providers/google';
@@ -31,7 +31,20 @@ export default function Auth() {
     if (response?.type === 'success') {
       try {
         const { authentication } = response;
-        const backendResponse = await fetch('http://localhost:9874/auth/google', {
+        console.log('Full response:', response);
+        console.log('Authentication object:', authentication);
+        console.log('Access token:', authentication?.accessToken);
+
+        const host = Platform.select({
+          web: 'localhost',
+          default: Constants.expoConfig?.hostUri?.split(':')[0]
+        });
+        
+        console.log('Using host:', host);
+        const url = `http://${host}:9874/auth/google`;
+        console.log('Calling backend URL:', url);
+
+        const backendResponse = await fetch(url, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -41,8 +54,11 @@ export default function Auth() {
           }),
         });
 
+        // Add error logging
         if (!backendResponse.ok) {
-          throw new Error('Authentication failed');
+          const errorData = await backendResponse.json();
+          console.error('Backend error:', errorData);
+          throw new Error(errorData.error || 'Authentication failed');
         }
 
         const { sessionToken, user } = await backendResponse.json();
@@ -53,7 +69,7 @@ export default function Auth() {
         console.log("User info:", user);
         router.replace('/(tabs)');
       } catch (error) {
-        console.log('Authentication error:', error);
+        console.log('Authentication error details:', error);
       }
     }
   };

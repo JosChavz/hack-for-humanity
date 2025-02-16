@@ -23,7 +23,11 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.humanity-hacks.humanity-hacks"
+      "package": "com.humanity-hacks.humanity-hacks",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -67,6 +71,7 @@
       "eas": {
         "projectId": "83febafb-6bb1-47c4-b92c-d10f82ed22f4"
       }
-    }
+    },
+    "owner": "hack-for-humanity"
   }
 }
