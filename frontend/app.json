@@ -15,6 +15,8 @@
         "googleMapsApiKey": "AIzaSyAZOKfc03D-Gl-97aZh0TgHDPi_joA3RzI"
       },
       "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "We need your location to record where you spotted wildlife",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "We need your location to record where you spotted wildlife",
         "ITSAppUsesNonExemptEncryption": false
       }
     },
@@ -58,6 +60,16 @@
           "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera",
           "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone",
           "recordAudioAndroid": true
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location.",
+          "locationAlwaysPermission": "Allow $(PRODUCT_NAME) to use your location.",
+          "locationWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location.",
+          "isIosBackgroundLocationEnabled": true,
+          "isAndroidBackgroundLocationEnabled": true
         }
       ]
     ],

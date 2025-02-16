@@ -5,6 +5,7 @@ import { Image } from "expo-image";
 import { FontAwesome6 } from "@expo/vector-icons";
 import Constants from "expo-constants";
 import { getCurrentPositionAsync, LocationObject, requestForegroundPermissionsAsync } from "expo-location";
+import * as SecureStore from 'expo-secure-store';
 
 export default function CameraScreen() {
   const ref = useRef<CameraView>(null);
@@ -46,7 +47,13 @@ export default function CameraScreen() {
     const photo = await ref.current?.takePictureAsync({ base64: true });
     if (photo?.base64) {
       setUri(`data:image/jpeg;base64,${photo.base64}`);
-      uploadImage(photo.base64)
+      const userInfo = await SecureStore.getItemAsync('userInfo');
+      if (!userInfo) {
+        Alert.alert('Error', 'User not logged in');
+        return;
+      }
+      const { email } = JSON.parse(userInfo);
+      uploadImage(photo.base64);
     }
   };
 
@@ -56,13 +63,19 @@ export default function CameraScreen() {
       const response = await fetch(`http://${host}:9874/upload-image`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image: base64Image, latitude: location?.coords.latitude, longitude: location?.coords.latitude, email: "aostrom@ucsc.edu" }),
+        body: JSON.stringify({ 
+          image: base64Image, 
+          latitude: location?.coords.latitude, 
+          longitude: location?.coords.longitude,
+          email: JSON.parse(await SecureStore.getItemAsync('userInfo') || '{}').email 
+        }),
       });
 
       const data = await response.json();
       Alert.alert('Sighting uploaded!', `It looks like you saw a ${data.species}`);
     } catch (error) {
       console.error('Error uploading image:', error);
+      Alert.alert('Error', 'Failed to upload image');
     }
   };
 

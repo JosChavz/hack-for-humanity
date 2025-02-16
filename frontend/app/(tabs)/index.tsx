@@ -5,32 +5,52 @@ import MapView, {Marker, PROVIDER_GOOGLE}  from 'react-native-maps';
 import {useEffect, useRef, useState} from 'react';
 import Constants from 'expo-constants';
 import {ObjectMap} from "@sinclair/typebox";
+import { ThemedText } from '@/components/ThemedText';
 
 import Map = ObjectMap.Map;
-import { View } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+
+interface Sighting {
+  id: string;
+  type: 'animal' | 'bird' | 'plant';
+  species: string;
+  latitude: string;
+  longitude: string;
+}
 
 export default function HomeScreen() {
+  const [sightings, setSightings] = useState<Sighting[]>([]);
 
-  // useEffect(() => {
-  //   // Fetch the test route from Flask
-  //   const fetchTestRoute = async () => {
-  //     try {
-  //       // const ip = await Network.getIpAddressAsync();
-  //       const host = Constants.expoConfig?.hostUri?.split(':')[0];
-  //       const response = await fetch(`http://${host}:9874/test-route`);
-  //       const data = await response.json();
-  //       console.log('API Response:', data);
-  //     } catch (error) {
-  //       console.error('Error calling Flask API:', error);
-  //     }
-  //   };
+  useEffect(() => {
+    fetchSightings();
+  }, []);
 
-  //   fetchTestRoute();
-  // }, []);
+  const fetchSightings = async () => {
+    try {
+      const host = Constants.expoConfig?.hostUri?.split(':')[0];
+      const response = await fetch(`http://${host}:9874/get-sightings`);
+      const data = await response.json();
+      setSightings(data.sightings);
+    } catch (error) {
+      console.error('Error fetching sightings:', error);
+    }
+  };
 
   return (
     <View style={styles.container}>
-      <MapView style={styles.map} />
+      <MapView style={styles.map}>
+        {sightings.map((sighting) => (
+          <Marker
+            key={sighting.id}
+            coordinate={{
+              latitude: parseFloat(sighting.latitude),
+              longitude: parseFloat(sighting.longitude),
+            }}
+            title={sighting.species}
+            description={`Type: ${sighting.type}`}
+          />
+        ))}
+      </MapView>
     </View>
   );
 }
